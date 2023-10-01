@@ -1,0 +1,111 @@
+--12. select-uri
+
+--pacientii care urmeaza un tratament mai scump de 10000 care contine medicamente sub forma de capsule
+--subcereri nesincronizate in clauza FROM
+
+select distinct p.pacient_id, p.nume_pacient, p.prenume_pacient, t.cost_tratament
+from pacient p, medic_trateaza_pacient m, (select t2.tratament_id, t2.cost_tratament 
+    					from tratament t2, tratament_medicament tm, medicament med
+    					where t2.tratament_id = tm.tratament_id
+    					and med.medicament_id = tm.medicament_id
+    					and cost_tratament > 10000
+    					and med.mod_administrare = 'capsule') t
+where m.pacient_id = p.pacient_id 
+and m.tratament_id = t.tratament_id;
+
+
+
+--pacientii care au fost tratati de un medic mai tanar decat ei care lucreaza la sectiunea 'Chirurgie'
+--subcereri sincronizate la care participa cel putin 3 tabele
+
+select p.pacient_id, p.nume_pacient, p.prenume_pacient
+from pacient p, medic med, medic_trateaza_pacient mp
+where p.pacient_id = mp.pacient_id
+and med.medic_id = mp.medic_id
+and med.medic_id in (select m.medic_id
+    		from medic m, sectie s
+		where s.sectie_id = m.sectie_id
+    		and s.nume_sectie = 'Chirurgie'
+    		and m.varsta < p.varsta);
+
+
+--medicii care au tratat cel putin 2 pacienti si au realizat cel putin o operatie care a durat mai mult de 3 ore
+--grupări de date cu  subcereri  nesincronizate  in  care  intervin  cel  putin  3  tabele, funcții grup, filtrare la nivel de grupuri
+
+select medic_id, nume_medic, prenume_medic
+from medic
+where medic_id in (select m.medic_id
+                    from medic m, medic_trateaza_pacient mp, operatie o
+                    where m.medic_id = mp.medic_id
+    		    and m.medic_id = o.medic_id
+                    group by m.medic_id
+                    having count(mp.pacient_id) >= 2
+    		    and m.medic_id in (select medic_id
+    				    from operatie
+    				    where durata_operatie < 180))
+order by 2, 3;
+
+
+--sa se selecteze id-ul, numele concatenat cu prenumele, varsta si daca numele incepe cu A sau cu B din tabelul PARAMEDIC
+--decode, nvl, functii cu date, functii cu siruri de caractere, case
+
+select paramedic_id, concat(nume_paramedic,concat(' ', prenume_paramedic)) nume, nvl(data_nasterii, '01-JAN-1970') data_nasterii,
+case
+    when extract(month from data_nasterii) < extract(month from sysdate) then to_char(sysdate, 'yyyy') - to_char(data_nasterii, 'yyyy') 
+    when extract(month from data_nasterii) > extract(month from sysdate) then to_char(sysdate, 'yyyy') - to_char(data_nasterii, 'yyyy') - 1
+    when extract(month from data_nasterii) = extract(month from sysdate) then case
+    			    when extract(day from data_nasterii) <= extract(day from sysdate) then to_char(sysdate, 'yyyy') - to_char(data_nasterii, 'yyyy') 
+    				when extract(day from data_nasterii) > extract(day from sysdate) then to_char(sysdate, 'yyyy') - to_char(data_nasterii, 'yyyy') - 1
+    				end
+end
+varsta, decode(substr(nume_paramedic, 1, 1), 'A', 'Numele incepe cu A', 'B', 'Numele incepe cu B', 'Numele incepe cu alta litera') Prima_litera
+from paramedic
+order by 2;
+
+--sa se selecteze pacientii care au grupa de sange 'A', medicii care ii trateaza si motivul internarii
+--clauza with
+
+with aux as (select m.medic_id
+    	from pacient p, medic m, medic_trateaza_pacient mp
+    	where p.pacient_id = mp.pacient_id
+    	and m.medic_id = mp.medic_id
+    	and p.grupa_sange = 'A')
+
+select m.medic_id, m.nume_medic, m.prenume_medic, p.pacient_id, p.nume_pacient, p.prenume_pacient, f.motiv_internare
+from medic m, pacient p, fisa_internare f, medic_trateaza_pacient mp
+where f.pacient_id = p.pacient_id
+and m.medic_id = mp.medic_id
+and p.pacient_id = mp.pacient_id
+and m.medic_id in (select * from aux);
+
+--13. delete si update
+
+--sa se stearga paramedicii care nu au adus niciun pacient la spital
+
+delete from paramedic
+where not exists (select pacient.*
+    		from pacient, ambulanta
+    		where pacient.ambulanta_id = ambulanta.ambulanta_id
+    		and paramedic.ambulanta_id = ambulanta.ambulanta_id);
+
+--sa se mareasca salariul medicilor care au efectuat cel putin 2 operatii cu 10%
+
+update medic
+set salariu = salariu * 1.1
+where medic_id in (select o.medic_id
+                    from operatie o, medic m
+                    where m.medic_id = o.medic_id
+                    group by o.medic_id
+                    having count(o.medic_id) >= 2);
+
+--sa se seteze data expirarii a medicamentelor care au fost folosite in tratarea unui pacient mai batran de 40 ani la data curenta
+
+update medicament
+set data_expirare = sysdate
+where medicament_id in (select medicament_id
+  			from tratament_medicament mt, tratament t, pacient p, medic_trateaza_pacient mp
+    			where t.tratament_id = mt.tratament_id
+    			and mp.tratament_id = t.tratament_id
+    			and mp.pacient_id = p.pacient_id
+    			and p.varsta > 40);
+

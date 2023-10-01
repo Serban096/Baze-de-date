@@ -1,0 +1,317 @@
+create table AMBULANTA(
+    ambulanta_id number(4) constraint pk_ambulanta primary key,
+    numar_inmatriculare varchar(10) not null,
+    distanta_parcursa number(7) not null,
+    an_achizitie number(4) not null,
+    an_revizie number(4) not null
+);
+
+create table PARAMEDIC(
+    paramedic_id number(4) constraint pk_paramedic primary key,
+    ambulanta_id number(4) not null,
+    nume_paramedic varchar2(50) not null,
+    prenume_paramedic varchar2(50) not null,
+    data_nasterii date not null,
+    cnp number(15) not null,
+    salariu number(10) not null,
+	foreign key(ambulanta_id) references AMBULANTA(ambulanta_id)
+);
+
+create table PACIENT(
+    pacient_id number(4) constraint pk_pacient primary key,
+    ambulanta_id number(4) not null,
+    nume_pacient varchar2(50) not null,
+    prenume_pacient varchar2(50) not null,
+    cnp_pacient number(15) not null,
+    varsta number(2) not null,
+    greutate number(5, 2) not null,
+    grupa_sange varchar2(2) check(grupa_sange = 'O' or grupa_sange = 'A' or grupa_sange = 'B' or grupa_sange = 'AB') not null,
+    foreign key(ambulanta_id) references AMBULANTA(ambulanta_id) 
+);
+
+create table SECTIE(
+    sectie_id number(4) constraint pk_sectie primary key,
+    nume_sectie varchar2(50) not null,
+    numar_medici number(2) not null,
+    numar_asistenti number(2) not null,
+    an_infiintare number(4) not null
+);
+
+create table MEDIC(
+    medic_id number(4) constraint pk_medic primary key,
+    sectie_id number(4) not null,
+    nume_medic varchar2(50) not null,
+    prenume_medic varchar2(50) not null,
+    cnp varchar2(50) not null,
+    varsta number(2) not null,
+    salariu number(7) not null,
+  	foreign key(sectie_id) references SECTIE(sectie_id)
+);
+describe medic;
+
+create table FISA_INTERNARE(
+    fisa_id number(4) constraint pk_fisa primary key,
+    pacient_id number(4) not null,
+    motiv_internare varchar2(50) not null,
+    data_internare date not null,
+    data_externare date not null,
+    foreign key(pacient_id) references PACIENT(pacient_id)
+);
+describe fisa_internare;
+
+create table INFO_OPERATIE(
+    id number(4) constraint pk_info_operatie_id primary key,
+    tip_operatie varchar(50) not null,
+    sanse_succes number(2) not null,
+    timp_recuperare number(4) not null
+);
+describe info_operatie;
+
+create table OPERATIE(
+    operatie_id number(4),
+	medic_id number(4),
+    info_id number(4) not null,
+    data_operatie date not null,
+    durata_operatie number(4) not null,
+    primary key(operatie_id, medic_id),
+    foreign key(info_id) references INFO_OPERATIE(id)
+);
+describe operatie;
+
+create table TRATAMENT(
+    tratament_id number(4) primary key, 
+    nume_tratament varchar(50) not null,
+    cost_tratament number(8) not null,
+    durata_tratament number(3) not null
+);
+describe tratament;
+
+create table MEDICAMENT(
+    medicament_id number(4) primary key,
+    nume varchar(50) not null,
+    data_expirare date not null,
+    mod_administrare varchar2(10) check(mod_administrare = 'capsule' or mod_administrare = 'injectat') not null,
+    prospect varchar2(50) not null
+);
+describe medicament;
+
+
+create table TRATAMENT_MEDICAMENT(
+    id number(4) primary key,
+    tratament_id number(4) not null,
+    medicament_id number(4) not null,
+    foreign key(tratament_id) references TRATAMENT(tratament_id),
+	foreign key(medicament_id) references MEDICAMENT(medicament_id)
+);
+describe tratament_medicament;
+
+create table MEDIC_TRATEAZA_PACIENT(
+    id number(4) primary key,
+    medic_id number(4) not null,
+    pacient_id number(4) not null,
+    tratament_id number(4) not null,
+    foreign key(medic_id) references MEDIC(medic_id),
+    foreign key(pacient_id) references PACIENT(pacient_id),
+    foreign key(tratament_id) references TRATAMENT(tratament_id)
+);
+describe medic_trateaza_pacient;
+
+create sequence secventa
+start with 1001
+increment by 1
+minvalue 1001
+maxvalue 1999
+nocycle;
+
+insert into AMBULANTA
+values (secventa.nextval, 'B104HFG', 104924, 2011, 2022);
+insert into AMBULANTA
+values (secventa.nextval, 'B625JGF', 30432, 2018, 2023);
+insert into AMBULANTA
+values (secventa.nextval, 'B651JGK', 432563, 2008, 2020);
+insert into AMBULANTA
+values (secventa.nextval, 'B3245NMO', 97432, 2014, 2022);
+insert into AMBULANTA
+values (secventa.nextval, 'B151FSS', 201512, 2011, 2019);
+
+insert into PARAMEDIC
+values (1025, 1002, 'Janet', 'Reynolds', '19-MAY-1996', 5015015015041, 7000);
+insert into PARAMEDIC
+values (1078, 1001, 'Nicolas', 'Faulkner','12-APR-1979', 5038125015041, 5500);
+insert into PARAMEDIC
+values (1151, 1002, 'Anne', 'Garcia', '09-JUN-2001', 6832583201851, 9200);
+insert into PARAMEDIC
+values (1301, 1002, 'Isaac', 'Jackson', '30-OCT-1991', 50183521532041, 7700);
+insert into PARAMEDIC
+values (1088, 1005, 'Nicole', 'Watts', '22-JAN-1989', 5029529350121, 4800);
+insert into PARAMEDIC
+values (1216, 1003, 'Andrew', 'Hansen', '10-MAR-1999', 5385718395912, 10000);
+insert into PARAMEDIC
+values (1087, 1001, 'Sarah', 'Johnson', '26-MAY-2000', 4029581259195, 6100);
+insert into PARAMEDIC
+values (1111, 1005, 'John', 'McDonald', '18-SEP-1982', 2921502594246, 4400);
+insert into PARAMEDIC
+values (1008, 1003, 'Alex', 'Wallace', '02-JUL-1998', 3952015939250, 8300);
+insert into PARAMEDIC
+values (1951, 1004, 'Alex', 'Johnson', '02-AUG-1995', 3416325939250, 8500);
+
+
+insert into PACIENT
+values (1682, 1002, 'Rafael', 'Lozano', 5001018294501, 25, 76.4, 'O');
+insert into PACIENT
+values (1245, 1005, 'Isaac', 'Price', 2960531398618, 27, 62, 'AB');
+insert into PACIENT
+values (1067, 1002, 'Christian', 'Davies', 1950624296122, 40, 94.4, 'O');
+insert into PACIENT
+values (1661, 1002, 'Brian', 'Archer', 2911203390945, 15, 55.8, 'B');
+insert into PACIENT
+values (1742, 1001, 'Emma', 'Bowen', 2900116523431, 31, 52, 'A');
+insert into PACIENT
+values (1582, 1005, 'Bonny', 'Krueger', 5010621073106, 44, 60.1, 'AB');
+insert into PACIENT
+values (1952, 1002, 'Barry', 'Nelson', 2990207122901, 55, 102.7, 'A');
+insert into PACIENT
+values (1142, 1003, 'Jeffrey', 'Carrey', 2921209458675, 31, 82.4, 'O');
+
+select * from pacient;
+
+insert into sectie
+values (1, 'Chirurgie', 12, 20, 1982);
+insert into sectie
+values (2, 'Oftalmologie', 6, 6, 1994);
+insert into sectie
+values (3, 'Pediatrie', 15, 18, 1968);
+insert into sectie
+values (4, 'Psihiatrie', 8, 10, 2002);
+insert into sectie
+values (5, 'Urgente', 25, 30, 1966);
+
+select * from sectie;
+
+insert into MEDIC
+values (1141, 1, 'Joe', 'Nixon', 1960215239651, 56, 13000);
+insert into MEDIC
+values (1935, 5, 'Rachel', 'Myers', 2910512215151, 42, 11500);
+insert into MEDIC
+values (1245, 5, 'Walter', 'White', 1890818463086, 34, 11000);
+insert into MEDIC
+values (1161, 2, 'Veronica', 'Barber', 2880521346647, 51, 15200);
+insert into MEDIC
+values (1052, 4, 'Frank', 'Conley', 2920704303097, 28, 8500);
+insert into MEDIC
+values (1852, 3, 'Thomas', 'Shelby', 1960127385451, 55, 12900);
+insert into MEDIC
+values (1526, 1, 'Patrick', 'Bateman', 2990907339842, 42, 12400);
+insert into MEDIC
+values (1294, 1, 'Jesse', 'Pinkman', 5030907363834, 38, 10200);
+
+select * from medic;
+
+insert into FISA_INTERNARE
+values (1052, 1661, 'Fractura la mana', '02-MAR-2023', '05-MAR-2023');
+insert into FISA_INTERNARE
+values (1755, 1742, 'Accident masina', '23-JUN-2021', '02-JUL-2021');
+insert into FISA_INTERNARE
+values (1593, 1142, 'Transplant de rinichi', '17-FEB-2015', '12-MAR-2015');
+insert into FISA_INTERNARE
+values (1531, 1067, 'Covid-19', '14-SEP-2020', '29-SEP-2020');
+insert into FISA_INTERNARE
+values (1231, 1952, 'Accident de munca', '20-AUG-2022', '01-SEP-2022');
+
+select * from fisa_internare;
+
+insert into INFO_OPERATIE
+values (13, 'Apendicectomie clasica', 99, 4);
+insert into INFO_OPERATIE
+values (21, 'Tumorectomie mamara', 82, 12);
+insert into INFO_OPERATIE
+values (41, 'Tiroidectomie totala', 95, 6);
+insert into INFO_OPERATIE
+values (37, 'Lobectomie tiroidiana', 97, 4);
+insert into INFO_OPERATIE
+values (93, 'Nefrectomie clasica', 88, 9);
+
+select * from info_operatie;
+
+insert into OPERATIE
+values (1241, 1245, 21, '15-DEC-2019', 124);
+insert into OPERATIE
+values (1742, 1161, 41, '09-JUN-2022', 97);
+insert into OPERATIE
+values (1676, 1052, 37, '25-JAN-2010', 221);
+insert into OPERATIE
+values (1444, 1526, 13, '02-NOV-2020', 146);
+insert into OPERATIE
+values (1420, 1294, 93, '19-SEP-2015', 52);
+insert into OPERATIE
+values (1051, 1141, 13, '31-MAY-2012', 184);
+
+select * from operatie;
+
+insert into TRATAMENT
+values (1, 'Tratament A', 2000, 6);
+insert into TRATAMENT
+values (2, 'Tratament B', 10000, 14);
+insert into TRATAMENT
+values (3, 'Tratament C', 400, 3);
+insert into TRATAMENT
+values (4, 'Tratament D', 40000, 30);
+insert into TRATAMENT
+values (5, 'Tratament E', 100000, 52);
+insert into TRATAMENT
+values (6, 'Tratament F', 5000, 4);
+
+insert into MEDICAMENT
+values (41, 'Algocalmin', '15-MAR-2025', 'injectat', 'Prospect Algocalmin');
+insert into MEDICAMENT
+values (55, 'Adrenalina', '22-DEC-2027', 'injectat', 'Prospect Adrenalina');
+insert into MEDICAMENT
+values (12, 'Acid Acetilsalicilic', '02-APR-2026', 'capsule', 'Prospect Acid Acetilsalicilic');
+insert into MEDICAMENT
+values (91, 'Nitroglicerina', '15-SEP-2025', 'capsule', 'Prospect Nitroglicerina');
+insert into MEDICAMENT
+values (53, 'Hidrocortizon Zentiva', '28-JAN-2028', 'injectat', 'Prospect Hidrocortizon Zentiva');
+insert into MEDICAMENT
+values (88, 'Bromhexim', '09-JUL-2025', 'capsule', 'Prospect Bromhexim');
+
+insert into TRATAMENT_MEDICAMENT
+values (1, 1, 12);
+insert into TRATAMENT_MEDICAMENT
+values (2, 5, 91);
+insert into TRATAMENT_MEDICAMENT
+values (3, 4, 88);
+insert into TRATAMENT_MEDICAMENT
+values (4, 1, 55);
+insert into TRATAMENT_MEDICAMENT
+values (5, 3, 55);
+insert into TRATAMENT_MEDICAMENT
+values (6, 5, 12);
+insert into TRATAMENT_MEDICAMENT
+values (7, 6, 41);
+insert into TRATAMENT_MEDICAMENT
+values (8, 5, 91);
+insert into TRATAMENT_MEDICAMENT
+values (9, 2, 53);
+insert into TRATAMENT_MEDICAMENT
+values (10, 3, 12);
+
+insert into MEDIC_TRATEAZA_PACIENT
+values(1, 1294, 1582, 5);
+insert into MEDIC_TRATEAZA_PACIENT
+values(2, 1052, 1142, 2);
+insert into MEDIC_TRATEAZA_PACIENT
+values(3, 1526, 1067, 6);
+insert into MEDIC_TRATEAZA_PACIENT
+values(4, 1161, 1682, 4);
+insert into MEDIC_TRATEAZA_PACIENT
+values(5, 1852, 1952, 3);
+insert into MEDIC_TRATEAZA_PACIENT
+values(6, 1245, 1742, 1);
+insert into MEDIC_TRATEAZA_PACIENT
+values(7, 1935, 1142, 4);
+insert into MEDIC_TRATEAZA_PACIENT
+values(8, 1245, 1582, 6);
+insert into MEDIC_TRATEAZA_PACIENT
+values(9, 1526, 1067, 3);
+insert into MEDIC_TRATEAZA_PACIENT
+values(10, 1052, 1682, 5);
